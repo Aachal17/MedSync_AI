@@ -1,0 +1,8 @@
+{
+  "name": "MediSync AI",
+  "description": "A comprehensive medication adherence and healthcare companion app connecting patients, doctors, and AI-driven insights.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
