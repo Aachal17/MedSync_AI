@@ -1,38 +1,44 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User } from '../types';
+import { User, StoredChatMessage } from '../types';
 import { MOCK_USER_DOCTOR } from '../services/mockData';
-import { Send, User as UserIcon, MoreVertical, Phone, Video, Sparkles } from 'lucide-react';
+import { Send, Phone, Video, MoreVertical, Sparkles, Trash2 } from 'lucide-react';
 import { generateSmartReplies } from '../services/geminiService';
+import { getChatHistory, sendMessage, formatTime, formatDateHeader, deleteChatHistory } from '../services/chatService';
 
 interface PatientChatViewProps {
   user: User;
 }
 
-interface ChatMsg {
-  id: string;
-  sender: 'doctor' | 'patient';
-  text: string;
-  time: string;
-}
-
 export const PatientChatView: React.FC<PatientChatViewProps> = ({ user }) => {
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { 
-      id: '1', 
-      sender: 'doctor', 
-      text: `Hello ${user.name}, checking in on your new dosage. Any side effects?`, 
-      time: '09:00 AM' 
-    }
-  ]);
+  const [messages, setMessages] = useState<StoredChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  
+  // We assume the patient is chatting with their primary doctor (Mock Doctor for now)
+  const doctorId = MOCK_USER_DOCTOR.id;
 
-  // Fetch suggestions when the last message is from the doctor
+  const fetchMessages = () => {
+    const history = getChatHistory(user.id, doctorId);
+    setMessages(history);
+  };
+
+  // Poll for new messages (simulate real-time)
+  useEffect(() => {
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 2000); // Poll every 2 seconds
+    return () => clearInterval(interval);
+  }, [user.id, doctorId]);
+
+  // Scroll to bottom on new message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length]);
+
+  // Generate AI Suggestions based on last message from Doctor
   useEffect(() => {
     const lastMsg = messages[messages.length - 1];
-    if (lastMsg.sender === 'doctor') {
+    if (lastMsg && lastMsg.senderRole === 'doctor') {
       const fetchSuggestions = async () => {
         const replies = await generateSmartReplies(lastMsg.text, 'patient');
         setSuggestions(replies);
@@ -46,33 +52,18 @@ export const PatientChatView: React.FC<PatientChatViewProps> = ({ user }) => {
   const handleSendMessage = (text: string) => {
     if (!text.trim()) return;
 
-    const newMsg: ChatMsg = {
-      id: Date.now().toString(),
-      sender: 'patient',
-      text: text,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setMessages(prev => [...prev, newMsg]);
+    sendMessage(user.id, doctorId, 'patient', text);
     setInputText('');
     setSuggestions([]);
-
-    // Simulate Doctor Reply
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: (Date.now() + 1).toString(),
-        sender: 'doctor',
-        text: "Thanks for the update. Keep monitoring your symptoms and let me know if anything changes.",
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }]);
-    }, 4000);
+    fetchMessages(); // Update immediately
   };
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  const handleDeleteChat = () => {
+    if (window.confirm("Are you sure you want to delete the entire chat history with this doctor?")) {
+        deleteChatHistory(user.id, doctorId);
+        fetchMessages();
+    }
+  };
 
   return (
     <div className="h-full flex flex-col bg-slate-50 relative">
@@ -89,38 +80,51 @@ export const PatientChatView: React.FC<PatientChatViewProps> = ({ user }) => {
           </div>
         </div>
         <div className="flex gap-2 text-slate-400">
+           <button 
+             onClick={handleDeleteChat} 
+             className="p-2 hover:bg-red-50 hover:text-red-500 rounded-full transition" 
+             title="Clear Chat History"
+           >
+             <Trash2 size={20} />
+           </button>
            <button className="p-2 hover:bg-slate-100 rounded-full transition"><Phone size={20} /></button>
            <button className="p-2 hover:bg-slate-100 rounded-full transition"><Video size={20} /></button>
-           <button className="p-2 hover:bg-slate-100 rounded-full transition"><MoreVertical size={20} /></button>
         </div>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        <div className="text-center text-xs text-slate-400 my-4">Today</div>
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.sender === 'patient' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2`}>
-             <div className={`max-w-[80%] md:max-w-[70%] p-4 rounded-2xl shadow-sm relative group ${
-               msg.sender === 'patient' 
-                 ? 'bg-gradient-to-br from-medical-600 to-medical-700 text-white rounded-tr-none' 
-                 : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
-             }`}>
-               <p className="text-sm leading-relaxed">{msg.text}</p>
-               <p className={`text-[10px] mt-1 text-right opacity-70 ${msg.sender === 'patient' ? 'text-medical-100' : 'text-slate-400'}`}>
-                 {msg.time}
-               </p>
-             </div>
-          </div>
-        ))}
-        {isTyping && (
-           <div className="flex justify-start animate-in fade-in">
-              <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-none border border-slate-100 shadow-sm flex gap-1">
-                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
-                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-75"></span>
-                 <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-150"></span>
-              </div>
-           </div>
+        {messages.length === 0 && (
+            <div className="text-center text-slate-400 text-sm mt-10">
+                No messages yet. Start a conversation with your doctor.
+            </div>
         )}
+        
+        {messages.map((msg, index) => {
+          const showDate = index === 0 || formatDateHeader(msg.timestamp) !== formatDateHeader(messages[index-1].timestamp);
+          
+          return (
+            <React.Fragment key={msg.id}>
+                {showDate && (
+                    <div className="text-center text-xs text-slate-400 my-4 font-medium bg-slate-100/50 py-1 rounded-full w-fit mx-auto px-3">
+                        {formatDateHeader(msg.timestamp)}
+                    </div>
+                )}
+                <div className={`flex ${msg.senderRole === 'patient' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-1 duration-200`}>
+                    <div className={`max-w-[80%] md:max-w-[70%] p-4 rounded-2xl shadow-sm relative group ${
+                    msg.senderRole === 'patient' 
+                        ? 'bg-gradient-to-br from-medical-600 to-medical-700 text-white rounded-tr-none' 
+                        : 'bg-white text-slate-700 border border-slate-100 rounded-tl-none'
+                    }`}>
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                    <p className={`text-[10px] mt-1 text-right opacity-70 ${msg.senderRole === 'patient' ? 'text-medical-100' : 'text-slate-400'}`}>
+                        {formatTime(msg.timestamp)}
+                    </p>
+                    </div>
+                </div>
+            </React.Fragment>
+          );
+        })}
         <div ref={chatEndRef} />
       </div>
 
@@ -150,7 +154,7 @@ export const PatientChatView: React.FC<PatientChatViewProps> = ({ user }) => {
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputText)}
               placeholder="Type your message..."
-              className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all"
+              className="flex-1 bg-slate-100 text-slate-900 placeholder:text-slate-400 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all"
             />
             <button 
               onClick={() => handleSendMessage(inputText)}

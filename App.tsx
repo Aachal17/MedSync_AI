@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Role, User, Medication, DoseLog, PatientDetails } from './types';
+import { Role, User, Medication, DoseLog, PatientDetails, CartItem, Product } from './types';
 import { MOCK_USER_PATIENT, MOCK_USER_DOCTOR, INITIAL_MEDS, INITIAL_LOGS } from './services/mockData';
 import { PatientView } from './components/PatientView';
 import { DoctorView } from './components/DoctorView';
@@ -7,6 +7,7 @@ import { AIView } from './components/AIView';
 import { ProfileView } from './components/ProfileView';
 import { MarketplaceView } from './components/MarketplaceView';
 import { PatientChatView } from './components/PatientChatView';
+import { AuthView } from './components/AuthView';
 import { Activity, Pill, User as UserIcon, LogOut, ShieldCheck, ShoppingBag, MessageSquare } from 'lucide-react';
 
 // Simple Router State
@@ -20,25 +21,73 @@ const App: React.FC = () => {
   const [meds, setMeds] = useState<Medication[]>(INITIAL_MEDS);
   const [logs, setLogs] = useState<DoseLog[]>(INITIAL_LOGS);
 
-  const handleLogin = (role: Role) => {
+  // Cart State (Lifted from Marketplace)
+  const [cart, setCart] = useState<CartItem[]>([]);
+
+  // Authentication Handlers
+  const handleAuthLogin = (email: string, role: Role) => {
+    // Validate against Mock Data for Demo
     if (role === Role.PATIENT) {
-      setCurrentUser(MOCK_USER_PATIENT);
+        if (email.toLowerCase() === MOCK_USER_PATIENT.email.toLowerCase()) {
+            setCurrentUser(MOCK_USER_PATIENT);
+            // Restore Mock Data for Sarah
+            setMeds(INITIAL_MEDS);
+            setLogs(INITIAL_LOGS);
+        } else {
+            // New user session
+            const tempUser: User = {
+                id: Date.now().toString(),
+                name: email.split('@')[0],
+                email: email,
+                role: Role.PATIENT,
+                avatar: `https://ui-avatars.com/api/?name=${email}&background=random`,
+                details: { dob: '', allergies: [], conditions: [], weight: 0 }
+            };
+            setCurrentUser(tempUser);
+            setMeds([]);
+            setLogs([]);
+        }
     } else {
-      setCurrentUser(MOCK_USER_DOCTOR);
+         if (email.toLowerCase() === MOCK_USER_DOCTOR.email.toLowerCase()) {
+            setCurrentUser(MOCK_USER_DOCTOR);
+         } else {
+            alert("Access Denied: Doctor credentials not found. Try 'dr.ray@medisync.com'");
+            return;
+         }
     }
     setCurrentView('dashboard');
+  };
+
+  const handleAuthSignup = (name: string, email: string) => {
+      const newUser: User = {
+          id: Date.now().toString(),
+          name,
+          email,
+          role: Role.PATIENT,
+          avatar: `https://ui-avatars.com/api/?name=${name}&background=0D9488&color=fff`,
+          details: {
+              dob: '',
+              allergies: [],
+              conditions: [],
+              weight: undefined
+          }
+      };
+      setCurrentUser(newUser);
+      setMeds([]); 
+      setLogs([]); 
+      setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
     setCurrentView('dashboard');
+    setCart([]);
   };
 
   const handleUpdateUser = (updatedUser: User) => {
     setCurrentUser(updatedUser);
   };
 
-  // Logic to take a dose: Add log AND decrement stock
   const handleTakeDose = (log: DoseLog) => {
     setLogs(prev => [...prev, log]);
     setMeds(prev => prev.map(med => 
@@ -48,66 +97,73 @@ const App: React.FC = () => {
     ));
   };
 
-  // Logic to refill medication
-  const handleRefill = (medId: string) => {
-    setMeds(prev => prev.map(med => 
-      med.id === medId 
-        ? { ...med, stock: med.stock + 30 } // Mock refill of 30 units
-        : med
-    ));
+  // Centralized Add to Cart logic
+  const handleAddToCart = (item: Product | Medication, quantity: number = 1) => {
+    setCart(prev => {
+      // Determine ID. If it's a Med, use its ID. If Product, use ID.
+      const itemId = item.id;
+      
+      const existing = prev.find(i => i.id === itemId);
+      if (existing) {
+        return prev.map(i => i.id === itemId ? { ...i, quantity: i.quantity + quantity } : i);
+      }
+      
+      // If it's a Medication object, we need to adapt it to a Product shape for the cart
+      // Check if it has 'price' property, if not it's a Medication
+      const isMedication = !('price' in item);
+      
+      if (isMedication) {
+          const med = item as Medication;
+          const medProduct: CartItem = {
+              id: med.id,
+              name: med.name,
+              category: 'Prescription',
+              description: `Refill for ${med.name} ${med.dosage}`,
+              price: 15.00, // Flat rate for demo
+              image: 'https://images.unsplash.com/photo-1585435557343-3b092031a831?auto=format&fit=crop&q=80&w=200',
+              stock: 999, // Prescriptions effectively unlimited if authorized
+              quantity: quantity
+          };
+          return [...prev, medProduct];
+      }
+
+      // Standard Product
+      return [...prev, { ...(item as Product), quantity }];
+    });
   };
 
-  // Logic for doctor to prescribe (adds to global meds list)
+  const handleUpdateCartQuantity = (id: string, delta: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        return { ...item, quantity: Math.max(1, item.quantity + delta) };
+      }
+      return item;
+    }));
+  };
+
+  const handleRemoveFromCart = (id: string) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  };
+
+  const handleClearCart = () => {
+    setCart([]);
+  };
+
   const handlePrescribe = (newMed: Medication, patientId: string) => {
-    // In a real app, we would filter by patientId. 
-    // Here we assume the mock patient is the target for simplicity.
     if (patientId === MOCK_USER_PATIENT.id) {
        setMeds(prev => [...prev, newMed]);
-       alert(`Prescription sent to ${MOCK_USER_PATIENT.name}`);
+       alert(`Prescription sent successfully.`);
     }
   };
 
-  // Render Login Screen
   if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-medical-500 to-teal-700 flex items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-medical-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Activity className="text-medical-600" size={32} />
-          </div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">MediSync AI</h1>
-          <p className="text-slate-500 mb-8">Intelligent healthcare management for everyone.</p>
-          
-          <div className="space-y-4">
-            <button 
-              onClick={() => handleLogin(Role.PATIENT)}
-              className="w-full bg-medical-600 hover:bg-medical-700 text-white font-semibold py-3 px-4 rounded-xl transition shadow-lg shadow-medical-200"
-            >
-              Log in as Patient
-            </button>
-            <button 
-              onClick={() => handleLogin(Role.DOCTOR)}
-              className="w-full bg-white border-2 border-slate-100 hover:border-medical-200 text-slate-700 font-semibold py-3 px-4 rounded-xl transition"
-            >
-              Log in as Doctor
-            </button>
-          </div>
-          
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <div className="flex items-center justify-center text-xs text-slate-400 gap-1">
-              <ShieldCheck size={12} />
-              <span>HIPAA Compliant & Secure</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <AuthView onLogin={handleAuthLogin} onSignup={handleAuthSignup} />;
   }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row max-w-7xl mx-auto shadow-2xl overflow-hidden md:h-screen">
       
-      {/* Sidebar Navigation (Desktop) / Bottom Bar (Mobile) */}
+      {/* Sidebar Navigation */}
       <nav className="bg-white md:w-20 md:flex-col flex-row flex md:border-r border-t md:border-t-0 border-slate-200 order-2 md:order-1 items-center justify-between md:justify-start py-2 md:py-6 px-6 md:px-0 z-10 shrink-0">
         <div className="hidden md:block mb-8">
            <Activity className="text-medical-600 mx-auto" size={28} />
@@ -150,7 +206,14 @@ const App: React.FC = () => {
                 onClick={() => setCurrentView('marketplace')}
                 className={`flex flex-col items-center gap-1 ${currentView === 'marketplace' ? 'text-medical-600' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                <ShoppingBag size={24} />
+                <div className="relative">
+                   <ShoppingBag size={24} />
+                   {cart.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                        {cart.reduce((a,b) => a + b.quantity, 0)}
+                      </span>
+                   )}
+                </div>
                 <span className="text-[10px] font-medium">Store</span>
               </button>
             </>
@@ -172,9 +235,8 @@ const App: React.FC = () => {
         </div>
       </nav>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <main className="flex-1 bg-slate-50 overflow-hidden flex flex-col order-1 md:order-2 h-[calc(100vh-60px)] md:h-screen">
-        {/* Header */}
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
           <div>
             <h1 className="text-xl font-bold text-slate-800 capitalize">
@@ -190,7 +252,6 @@ const App: React.FC = () => {
           </div>
         </header>
 
-        {/* View Router */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
           {currentUser.role === Role.PATIENT ? (
             <>
@@ -199,20 +260,31 @@ const App: React.FC = () => {
                   medications={meds} 
                   logs={logs}
                   user={currentUser}
+                  onUpdateUser={handleUpdateUser}
                   onTakeDose={handleTakeDose}
                   onAddMed={(med) => setMeds([...meds, med])}
-                  onRefill={handleRefill}
+                  onRefill={(medId) => {
+                     const med = meds.find(m => m.id === medId);
+                     if (med) handleAddToCart(med);
+                  }}
                 />
               )}
               {currentView === 'ai' && <AIView user={currentUser} medications={meds} />}
               {currentView === 'messages' && <PatientChatView user={currentUser} />}
-              {currentView === 'marketplace' && <MarketplaceView />}
+              {currentView === 'marketplace' && (
+                 <MarketplaceView 
+                   cart={cart}
+                   onAddToCart={handleAddToCart}
+                   onUpdateQuantity={handleUpdateCartQuantity}
+                   onRemoveFromCart={handleRemoveFromCart}
+                   onClearCart={handleClearCart}
+                 />
+              )}
               {currentView === 'profile' && (
                 <ProfileView user={currentUser} onSave={handleUpdateUser} />
               )}
             </>
           ) : (
-            // DOCTOR VIEWS
             <>
                {currentView === 'dashboard' && (
                  <DoctorView 

@@ -60,7 +60,7 @@ export const checkDrugInteractions = async (medications: Medication[]): Promise<
       Return ONLY valid JSON with this schema:
       {
         "hasInteractions": boolean,
-        "summary": "string - brief bulleted list of interactions or 'None'"
+        "summary": "string - Provide a list of interactions in very simple, plain English that a patient can easily understand. Avoid medical jargon. Use clear bullet points."
       }`,
       config: {
         responseMimeType: "application/json"
@@ -84,12 +84,19 @@ export const getDetailedInteractionExplanation = async (medications: Medication[
       model: 'gemini-3-pro-preview',
       contents: `The patient is taking: ${medList}.
       They have received a basic warning about interactions.
-      Please provide a comprehensive, easy-to-understand explanation of:
-      1. Specifically WHY these drugs interact (mechanism in simple terms).
-      2. What specific symptoms to watch out for.
-      3. Actionable advice on management (e.g. spacing doses).
+      Please provide a comprehensive, structured explanation.
       
-      Keep the tone empathetic but professional.`,
+      Use exactly these headers (starting with ###):
+      ### 🛑 Why is this a risk?
+      (Explain the interaction mechanism in very simple terms)
+      
+      ### 🤒 Symptoms to watch for
+      (List specific signs the patient should look out for)
+      
+      ### ✅ Actionable Steps
+      (Practical advice like 'Take 2 hours apart' or 'Take with food')
+      
+      Keep the tone empathetic, reassuring, and professional. Avoid complex jargon.`,
       config: {
         thinkingConfig: { thinkingBudget: 32768 }
       }

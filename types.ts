@@ -26,12 +26,23 @@ export interface User {
   details?: PatientDetails | DoctorDetails;
 }
 
+export interface Vitals {
+  heartRate: number; // bpm
+  systolicBP: number; // mmHg
+  diastolicBP: number; // mmHg
+  bloodGlucose: number; // mg/dL
+  oxygenSaturation: number; // %
+  temperature: number; // Celsius
+  lastUpdated: string; // ISO String
+}
+
 export interface PatientDetails {
   dob: string;
   allergies: string[];
   conditions: string[];
   weight?: number;
   height?: number;
+  vitals?: Vitals;
 }
 
 export interface DoctorDetails {
@@ -80,6 +91,15 @@ export interface ChatMessage {
   isThinking?: boolean;
 }
 
+export interface StoredChatMessage {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  senderRole: 'doctor' | 'patient';
+  text: string;
+  timestamp: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -87,6 +107,7 @@ export interface Product {
   price: number;
   image: string;
   description: string;
+  stock: number; // Added stock tracking
 }
 
 export interface CartItem extends Product {

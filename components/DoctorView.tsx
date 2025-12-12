@@ -1,21 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Medication, DoseLog, PatientDetails, MedStatus } from '../types';
-import { Search, User as UserIcon, Activity, FileText, ChevronRight, Plus, X, Pill, Clock, MessageSquare, Send, ArrowLeft, Sparkles } from 'lucide-react';
+import { User, Medication, DoseLog, PatientDetails, MedStatus, StoredChatMessage } from '../types';
+import { COMMON_DRUGS } from '../services/mockData';
+import { Search, Activity, FileText, ChevronRight, Plus, X, Pill, Clock, MessageSquare, Send, ArrowLeft, Sparkles, Trash2 } from 'lucide-react';
 import { AreaChart, Area, Tooltip, ResponsiveContainer } from 'recharts';
 import { generateSmartReplies } from '../services/geminiService';
+import { getChatHistory, sendMessage, formatTime, deleteChatHistory } from '../services/chatService';
 
 interface DoctorViewProps {
   doctor: User;
   patients: User[];
   allLogs: DoseLog[];
   onPrescribe: (med: Medication, patientId: string) => void;
-}
-
-interface ChatMsg {
-    id: string;
-    sender: 'doctor' | 'patient';
-    text: string;
-    time: string;
 }
 
 export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLogs, onPrescribe }) => {
@@ -26,13 +21,36 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
   // Chat State
   const [activeTab, setActiveTab] = useState<'overview' | 'chat'>('overview');
   const [chatMessage, setChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState<ChatMsg[]>([
-      { id: '1', sender: 'patient', text: 'Hi Dr. Ray, I have been feeling a bit dizzy after the morning dose.', time: '10:00 AM' }
-  ]);
+  const [chatHistory, setChatHistory] = useState<StoredChatMessage[]>([]);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Auto-Suggest State
+  const [drugName, setDrugName] = useState('');
+  const [drugSuggestions, setDrugSuggestions] = useState<string[]>([]);
+
   const selectedPatient = patients.find(p => p.id === selectedPatientId);
+
+  // Poll for messages when chat tab is active
+  useEffect(() => {
+    if (selectedPatientId && activeTab === 'chat') {
+        const fetchMessages = () => {
+            const history = getChatHistory(doctor.id, selectedPatientId);
+            setChatHistory(history);
+        };
+        
+        fetchMessages();
+        const interval = setInterval(fetchMessages, 2000); // Poll every 2s
+        return () => clearInterval(interval);
+    }
+  }, [selectedPatientId, activeTab, doctor.id]);
+
+  // Scroll to bottom
+  useEffect(() => {
+      if (activeTab === 'chat') {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+  }, [chatHistory, activeTab]);
 
   // Mock adherence data generator for the chart
   const data = [
@@ -43,6 +61,22 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
     { name: 'W5', adherence: 95 },
   ];
 
+  const handleDrugNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setDrugName(val);
+    if (val.length > 1) {
+       const matched = COMMON_DRUGS.filter(d => d.toLowerCase().includes(val.toLowerCase()));
+       setDrugSuggestions(matched.slice(0, 5)); // Limit to 5
+    } else {
+       setDrugSuggestions([]);
+    }
+  };
+
+  const selectDrug = (name: string) => {
+    setDrugName(name);
+    setDrugSuggestions([]);
+  };
+
   const handlePrescribeSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedPatientId) return;
@@ -50,7 +84,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
     const form = e.target as HTMLFormElement;
     const newMed: Medication = {
       id: Date.now().toString(),
-      name: (form.elements.namedItem('name') as HTMLInputElement).value,
+      name: drugName,
       dosage: (form.elements.namedItem('dosage') as HTMLInputElement).value,
       frequency: (form.elements.namedItem('frequency') as HTMLSelectElement).value,
       times: [(form.elements.namedItem('time') as HTMLInputElement).value],
@@ -63,12 +97,13 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
 
     onPrescribe(newMed, selectedPatientId);
     setShowPrescribeModal(false);
+    setDrugName('');
   };
 
   // Generate suggestions when patient sends a message
   useEffect(() => {
     const lastMsg = chatHistory[chatHistory.length - 1];
-    if (lastMsg.sender === 'patient') {
+    if (lastMsg && lastMsg.senderRole === 'patient') {
         const fetchSuggestions = async () => {
             const replies = await generateSmartReplies(lastMsg.text, 'doctor');
             setSuggestions(replies);
@@ -80,33 +115,21 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
   }, [chatHistory]);
 
   const handleSendMessage = (text: string) => {
-      if (!text.trim()) return;
+      if (!text.trim() || !selectedPatientId) return;
       
-      const newMsg: ChatMsg = {
-          id: Date.now().toString(),
-          sender: 'doctor',
-          text: text,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      };
-      
-      setChatHistory(prev => [...prev, newMsg]);
+      sendMessage(doctor.id, selectedPatientId, 'doctor', text);
       setChatMessage('');
       setSuggestions([]);
-
-      // Simulate Real-time reply
-      setTimeout(() => {
-          setChatHistory(prev => [...prev, {
-              id: (Date.now() + 1).toString(),
-              sender: 'patient',
-              text: "Thank you doctor, I'll follow your advice.",
-              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }]);
-      }, 3000);
+      // Immediate fetch update handled by polling or we could manually update state here
+      setChatHistory(getChatHistory(doctor.id, selectedPatientId));
   };
 
-  useEffect(() => {
-      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatHistory, activeTab]);
+  const handleDeleteChat = () => {
+      if (selectedPatientId && window.confirm("Delete chat history with this patient?")) {
+          deleteChatHistory(doctor.id, selectedPatientId);
+          setChatHistory([]);
+      }
+  };
 
   return (
     <div className="h-full flex flex-col md:flex-row bg-slate-50">
@@ -116,7 +139,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
            <h2 className="font-bold text-lg text-slate-800">My Patients</h2>
            <div className="mt-2 relative">
              <Search className="absolute left-2 top-2.5 text-slate-400" size={16} />
-             <input className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 py-2 text-sm" placeholder="Search name..." />
+             <input className="w-full bg-slate-50 text-slate-900 border border-slate-200 rounded-lg pl-8 py-2 text-sm" placeholder="Search name..." />
            </div>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -252,12 +275,23 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
              ) : (
                  // CHAT INTERFACE
                  <div className="flex-1 flex flex-col bg-slate-50">
+                     <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-white/50">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Chat History</span>
+                        <button onClick={handleDeleteChat} title="Clear History" className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
+                            <Trash2 size={16} />
+                        </button>
+                     </div>
                      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                         {chatHistory.length === 0 && (
+                             <div className="text-center text-slate-400 text-sm mt-10">
+                                 No chat history with this patient.
+                             </div>
+                         )}
                          {chatHistory.map(msg => (
-                             <div key={msg.id} className={`flex ${msg.sender === 'doctor' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
-                                 <div className={`max-w-[75%] p-3 rounded-2xl shadow-sm text-sm ${msg.sender === 'doctor' ? 'bg-medical-600 text-white rounded-tr-none' : 'bg-white text-slate-700 border border-slate-200 rounded-tl-none'}`}>
-                                     <p>{msg.text}</p>
-                                     <p className={`text-[10px] mt-1 text-right ${msg.sender === 'doctor' ? 'text-medical-200' : 'text-slate-400'}`}>{msg.time}</p>
+                             <div key={msg.id} className={`flex ${msg.senderRole === 'doctor' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2`}>
+                                 <div className={`max-w-[75%] p-3 rounded-2xl shadow-sm text-sm ${msg.senderRole === 'doctor' ? 'bg-medical-600 text-white rounded-tr-none' : 'bg-white text-slate-700 border border-slate-200 rounded-tl-none'}`}>
+                                     <p className="whitespace-pre-wrap">{msg.text}</p>
+                                     <p className={`text-[10px] mt-1 text-right ${msg.senderRole === 'doctor' ? 'text-medical-200' : 'text-slate-400'}`}>{formatTime(msg.timestamp)}</p>
                                  </div>
                              </div>
                          ))}
@@ -288,7 +322,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
                             onChange={(e) => setChatMessage(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(chatMessage)}
                             placeholder="Type a message to patient..." 
-                            className="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all"
+                            className="flex-1 bg-slate-100 text-slate-900 placeholder:text-slate-400 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all"
                          />
                          <button onClick={() => handleSendMessage(chatMessage)} className="bg-medical-600 text-white p-2 rounded-xl hover:bg-medical-700 transition shadow-sm">
                              <Send size={20} />
@@ -299,44 +333,63 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
           </div>
         )}
 
-        {/* Prescribe Modal (Existing...) */}
+        {/* Improved Prescribe Modal with Type-Ahead */}
         {showPrescribeModal && (
            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-                 <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                      <Pill className="text-medical-600" /> New Prescription
-                    </h3>
-                    <button onClick={() => setShowPrescribeModal(false)} className="text-slate-400 hover:text-slate-600">
-                      <X size={20} />
-                    </button>
+              <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto relative">
+                 <button onClick={() => setShowPrescribeModal(false)} className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition">
+                      <X size={16} />
+                 </button>
+                 
+                 <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-medical-100 p-2 rounded-xl text-medical-600">
+                      <Pill size={24} />
+                    </div>
+                    <h3 className="text-xl font-bold text-slate-800">New Prescription</h3>
                  </div>
                  
                  <form onSubmit={handlePrescribeSubmit} className="space-y-4">
-                    <div>
-                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Drug Name</label>
+                    <div className="relative">
+                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wide">Drug Name (Auto-Suggest)</label>
                        <input 
                          name="name"
+                         value={drugName}
+                         onChange={handleDrugNameChange}
+                         autoComplete="off"
                          required
-                         placeholder="e.g. Amoxicillin" 
-                         className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none"
+                         placeholder="Start typing..." 
+                         className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
                        />
+                       {drugSuggestions.length > 0 && (
+                          <div className="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 overflow-hidden animate-in fade-in">
+                             {drugSuggestions.map(suggestion => (
+                                <div 
+                                  key={suggestion}
+                                  onClick={() => selectDrug(suggestion)}
+                                  className="px-4 py-2.5 text-sm hover:bg-slate-50 cursor-pointer text-slate-700 font-medium"
+                                >
+                                   {suggestion}
+                                </div>
+                             ))}
+                          </div>
+                       )}
                     </div>
+
                     <div className="grid grid-cols-2 gap-4">
                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Dosage</label>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wide">Dosage</label>
                           <input 
                             name="dosage"
                             required
                             placeholder="e.g. 500mg" 
-                            className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none"
+                            className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
                           />
                        </div>
                        <div>
-                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Frequency</label>
+                          <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wide">Frequency</label>
                           <select 
                             name="frequency" 
-                            className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-white"
+                            className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
                           >
                              <option value="Daily">Daily</option>
                              <option value="2x Daily">2x Daily</option>
@@ -346,30 +399,30 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
                        </div>
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Schedule Time</label>
+                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wide">Schedule Time</label>
                        <div className="relative">
-                         <Clock size={16} className="absolute left-3 top-3 text-slate-400" />
+                         <Clock size={16} className="absolute left-3 top-3.5 text-slate-400" />
                          <input 
                            type="time" 
                            name="time"
                            defaultValue="09:00"
-                           className="w-full border border-slate-200 rounded-lg pl-10 pr-3 py-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none"
+                           className="w-full pl-10 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
                          />
                        </div>
                     </div>
                     <div>
-                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Instructions</label>
+                       <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wide">Instructions</label>
                        <textarea 
                          name="instructions"
                          placeholder="e.g. Take with food. Finish full course." 
                          rows={3}
-                         className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none resize-none"
+                         className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none resize-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
                        />
                     </div>
 
                     <div className="pt-2">
-                       <button type="submit" className="w-full bg-medical-600 hover:bg-medical-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-medical-200 transition-all active:scale-95">
-                          Prescribe & Notify Patient
+                       <button type="submit" className="w-full bg-medical-600 hover:bg-medical-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-medical-200 transition-all active:scale-95 flex items-center justify-center gap-2">
+                          <Send size={18} /> Send Prescription
                        </button>
                     </div>
                  </form>
