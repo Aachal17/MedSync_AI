@@ -154,7 +154,7 @@ export const PatientChatView: React.FC<PatientChatViewProps> = ({ user }) => {
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(inputText)}
               placeholder="Type your message..."
-              className="flex-1 bg-slate-100 text-slate-900 placeholder:text-slate-400 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all"
+              className="flex-1 bg-white text-gray-900 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all placeholder:text-gray-400"
             />
             <button 
               onClick={() => handleSendMessage(inputText)}

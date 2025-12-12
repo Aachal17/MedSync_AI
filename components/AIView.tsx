@@ -157,7 +157,7 @@ export const AIView: React.FC<AIViewProps> = ({ user, medications = [] }) => {
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask about medications, side effects, or symptoms..."
-                className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-3 py-1 outline-none text-slate-800 placeholder:text-slate-400"
+                className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-3 py-1 outline-none text-gray-900 placeholder:text-gray-400"
                 autoComplete="off"
               />
               <button 

@@ -154,7 +154,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
               type="text"
               value={formState.name} 
               onChange={(e) => setFormState({...formState, name: e.target.value})}
-              className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 focus:border-transparent outline-none transition-all bg-slate-50 focus:bg-white text-slate-900"
+              className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 focus:border-transparent outline-none transition-all bg-white text-gray-900"
               placeholder="Your full name"
             />
           </div>
@@ -167,7 +167,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
                   type="number"
                   value={formState.weight} 
                   onChange={(e) => setFormState({...formState, weight: e.target.value})}
-                  className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 focus:border-transparent outline-none transition-all bg-slate-50 focus:bg-white text-slate-900"
+                  className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 focus:border-transparent outline-none transition-all bg-white text-gray-900"
                   placeholder="e.g. 70"
                 />
               </div>
@@ -176,7 +176,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
                 <textarea 
                   value={formState.conditions} 
                   onChange={(e) => setFormState({...formState, conditions: e.target.value})}
-                  className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 focus:border-transparent outline-none transition-all bg-slate-50 focus:bg-white resize-none text-slate-900"
+                  className="w-full border border-slate-200 rounded-lg p-3 text-sm focus:ring-2 focus:ring-medical-500 focus:border-transparent outline-none transition-all bg-white resize-none text-gray-900"
                   placeholder="Hypertension, Diabetes (comma separated)"
                   rows={2}
                 />

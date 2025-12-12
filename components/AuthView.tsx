@@ -144,7 +144,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, onSignup }) => {
                                type="text" 
                                value={formData.name}
                                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                               className="w-full bg-slate-50 text-slate-900 border border-slate-200 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all"
+                               className="w-full bg-slate-50 text-gray-900 border border-slate-200 rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition-all placeholder:text-gray-400"
                                placeholder="e.g. John Doe"
                             />
                          </div>
@@ -159,7 +159,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, onSignup }) => {
                             type="email" 
                             value={formData.email}
                             onChange={(e) => setFormData({...formData, email: e.target.value})}
-                            className={`w-full bg-slate-50 text-slate-900 border rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 transition-all ${role === Role.PATIENT ? 'focus:ring-teal-500' : 'focus:ring-indigo-500'} border-slate-200`}
+                            className={`w-full bg-slate-50 text-gray-900 border rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 transition-all ${role === Role.PATIENT ? 'focus:ring-teal-500' : 'focus:ring-indigo-500'} border-slate-200 placeholder:text-gray-400`}
                             placeholder="name@example.com"
                          />
                       </div>
@@ -173,7 +173,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ onLogin, onSignup }) => {
                             type="password" 
                             value={formData.password}
                             onChange={(e) => setFormData({...formData, password: e.target.value})}
-                            className={`w-full bg-slate-50 text-slate-900 border rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 transition-all ${role === Role.PATIENT ? 'focus:ring-teal-500' : 'focus:ring-indigo-500'} border-slate-200`}
+                            className={`w-full bg-slate-50 text-gray-900 border rounded-xl py-3 pl-10 pr-4 outline-none focus:ring-2 transition-all ${role === Role.PATIENT ? 'focus:ring-teal-500' : 'focus:ring-indigo-500'} border-slate-200 placeholder:text-gray-400`}
                             placeholder="••••••••"
                          />
                       </div>

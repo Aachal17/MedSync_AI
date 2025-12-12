@@ -139,7 +139,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
            <h2 className="font-bold text-lg text-slate-800">My Patients</h2>
            <div className="mt-2 relative">
              <Search className="absolute left-2 top-2.5 text-slate-400" size={16} />
-             <input className="w-full bg-slate-50 text-slate-900 border border-slate-200 rounded-lg pl-8 py-2 text-sm" placeholder="Search name..." />
+             <input className="w-full bg-white text-gray-900 border border-slate-200 rounded-lg pl-8 py-2 text-sm placeholder:text-gray-400" placeholder="Search name..." />
            </div>
         </div>
         <div className="flex-1 overflow-y-auto">
@@ -322,7 +322,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
                             onChange={(e) => setChatMessage(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSendMessage(chatMessage)}
                             placeholder="Type a message to patient..." 
-                            className="flex-1 bg-slate-100 text-slate-900 placeholder:text-slate-400 border-none rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all"
+                            className="flex-1 bg-white text-gray-900 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-medical-500 outline-none transition-all placeholder:text-gray-400"
                          />
                          <button onClick={() => handleSendMessage(chatMessage)} className="bg-medical-600 text-white p-2 rounded-xl hover:bg-medical-700 transition shadow-sm">
                              <Send size={20} />
@@ -358,7 +358,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
                          autoComplete="off"
                          required
                          placeholder="Start typing..." 
-                         className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
+                         className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-white text-gray-900 transition-all placeholder:text-gray-400"
                        />
                        {drugSuggestions.length > 0 && (
                           <div className="absolute z-10 w-full bg-white border border-slate-200 rounded-xl shadow-lg mt-1 overflow-hidden animate-in fade-in">
@@ -382,14 +382,14 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
                             name="dosage"
                             required
                             placeholder="e.g. 500mg" 
-                            className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
+                            className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-white text-gray-900 transition-all placeholder:text-gray-400"
                           />
                        </div>
                        <div>
                           <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 tracking-wide">Frequency</label>
                           <select 
                             name="frequency" 
-                            className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
+                            className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-white text-gray-900 transition-all"
                           >
                              <option value="Daily">Daily</option>
                              <option value="2x Daily">2x Daily</option>
@@ -406,7 +406,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
                            type="time" 
                            name="time"
                            defaultValue="09:00"
-                           className="w-full pl-10 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
+                           className="w-full pl-10 border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none bg-white text-gray-900 transition-all"
                          />
                        </div>
                     </div>
@@ -416,7 +416,7 @@ export const DoctorView: React.FC<DoctorViewProps> = ({ doctor, patients, allLog
                          name="instructions"
                          placeholder="e.g. Take with food. Finish full course." 
                          rows={3}
-                         className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none resize-none bg-slate-50 focus:bg-white text-slate-900 transition-all"
+                         className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none resize-none bg-white text-gray-900 transition-all placeholder:text-gray-400"
                        />
                     </div>
 

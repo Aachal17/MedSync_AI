@@ -794,7 +794,7 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
                              type="number" 
                              value={vitalsForm.heartRate || ''}
                              onChange={(e) => setVitalsForm({...vitalsForm, heartRate: Number(e.target.value)})}
-                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-slate-900"
+                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-gray-900 bg-white"
                           />
                        </div>
                        <div>
@@ -803,7 +803,7 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
                              type="number" 
                              value={vitalsForm.bloodGlucose || ''}
                              onChange={(e) => setVitalsForm({...vitalsForm, bloodGlucose: Number(e.target.value)})}
-                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-slate-900"
+                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-gray-900 bg-white"
                           />
                        </div>
                     </div>
@@ -815,7 +815,7 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
                              type="number" 
                              value={vitalsForm.systolicBP || ''}
                              onChange={(e) => setVitalsForm({...vitalsForm, systolicBP: Number(e.target.value)})}
-                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-slate-900"
+                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-gray-900 bg-white"
                           />
                        </div>
                        <div>
@@ -824,7 +824,7 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
                              type="number" 
                              value={vitalsForm.diastolicBP || ''}
                              onChange={(e) => setVitalsForm({...vitalsForm, diastolicBP: Number(e.target.value)})}
-                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-slate-900"
+                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-gray-900 bg-white"
                           />
                        </div>
                     </div>
@@ -836,7 +836,7 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
                              type="number" 
                              value={vitalsForm.oxygenSaturation || ''}
                              onChange={(e) => setVitalsForm({...vitalsForm, oxygenSaturation: Number(e.target.value)})}
-                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-slate-900"
+                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-gray-900 bg-white"
                           />
                        </div>
                        <div>
@@ -846,7 +846,7 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
                              step="0.1"
                              value={vitalsForm.temperature || ''}
                              onChange={(e) => setVitalsForm({...vitalsForm, temperature: Number(e.target.value)})}
-                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-slate-900"
+                             className="w-full border border-slate-200 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-medical-500 text-gray-900 bg-white"
                           />
                        </div>
                     </div>
@@ -884,20 +884,19 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
               });
               setShowAddModal(false);
             }} className="space-y-4">
-              <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Medicine Name</label><input name="name" required className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none text-slate-900" placeholder="e.g. Ibuprofen" /></div>
+              <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Medicine Name</label><input name="name" required className="w-full border border-slate-200 rounded-xl p-3 text-sm focus:ring-2 focus:ring-medical-500 outline-none text-gray-900 bg-white placeholder:text-gray-400" placeholder="e.g. Ibuprofen" /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Dosage</label><input name="dose" required className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900" placeholder="e.g. 200mg" /></div>
-                <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Frequency</label><select name="frequency" className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900"><option value="Daily">Daily</option><option value="2x Daily">2x Daily</option><option value="Weekly">Weekly</option></select></div>
+                <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Dosage</label><input name="dose" required className="w-full border border-slate-200 rounded-xl p-3 text-sm text-gray-900 bg-white placeholder:text-gray-400" placeholder="e.g. 200mg" /></div>
+                <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Frequency</label><select name="frequency" className="w-full border border-slate-200 rounded-xl p-3 text-sm text-gray-900 bg-white"><option value="Daily">Daily</option><option value="2x Daily">2x Daily</option><option value="Weekly">Weekly</option></select></div>
               </div>
-              <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Times (Comma Sep)</label><input name="times" defaultValue="09:00" className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900" placeholder="09:00, 20:00" /></div>
-              <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Instructions</label><input name="instructions" className="w-full border border-slate-200 rounded-xl p-3 text-sm text-slate-900" placeholder="e.g. Take with food" /></div>
-              <div className="pt-2 flex gap-3"><button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 text-slate-600 bg-slate-100 rounded-xl">Cancel</button><button type="submit" className="flex-1 py-3 text-white bg-medical-600 rounded-xl font-semibold shadow-lg">Save</button></div>
+              <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Times (Comma Sep)</label><input name="times" defaultValue="09:00" className="w-full border border-slate-200 rounded-xl p-3 text-sm text-gray-900 bg-white placeholder:text-gray-400" placeholder="09:00, 20:00" /></div>
+              <div><label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Instructions</label><input name="instructions" className="w-full border border-slate-200 rounded-xl p-3 text-sm text-gray-900 bg-white placeholder:text-gray-400" placeholder="e.g. Take with food" /></div>
+              <div className="pt-2 flex gap-3"><button type="button" onClick={() => setShowAddModal(false)} className="flex-1 py-3 text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition">Cancel</button><button type="submit" className="flex-1 py-3 text-white bg-medical-600 rounded-xl font-semibold shadow-lg hover:bg-medical-700 transition">Save</button></div>
             </form>
           </div>
         </div>
       )}
       
-      {/* Import Modal & Verify Modal code omitted for brevity but presumed preserved or re-inserted as is */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white w-full max-w-sm rounded-2xl p-6 relative">
@@ -912,11 +911,11 @@ export const PatientView: React.FC<PatientViewProps> = ({ medications, logs, use
               </label>
             ) : (
               <form onSubmit={confirmImportedMed} className="space-y-3">
-                 <input name="name" defaultValue={scannedMed.name} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-slate-900" />
-                 <input name="dosage" defaultValue={scannedMed.dosage} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-slate-900" />
-                 <input name="frequency" defaultValue={scannedMed.frequency} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-slate-900" />
-                 <input name="times" defaultValue={scannedMed.times?.join(', ')} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-slate-900" />
-                 <input name="instructions" defaultValue={scannedMed.instructions} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-slate-900" />
+                 <input name="name" defaultValue={scannedMed.name} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-gray-900 bg-white" />
+                 <input name="dosage" defaultValue={scannedMed.dosage} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-gray-900 bg-white" />
+                 <input name="frequency" defaultValue={scannedMed.frequency} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-gray-900 bg-white" />
+                 <input name="times" defaultValue={scannedMed.times?.join(', ')} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-gray-900 bg-white" />
+                 <input name="instructions" defaultValue={scannedMed.instructions} className="w-full border border-slate-200 rounded-lg p-2 text-sm text-gray-900 bg-white" />
                  <button type="submit" className="w-full py-3 mt-2 bg-medical-600 text-white rounded-xl font-bold">Confirm & Add</button>
               </form>
             )}
