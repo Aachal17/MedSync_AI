@@ -5,10 +5,12 @@ import { PatientView } from './components/PatientView';
 import { DoctorView } from './components/DoctorView';
 import { AIView } from './components/AIView';
 import { ProfileView } from './components/ProfileView';
-import { Activity, Pill, User as UserIcon, LogOut, ShieldCheck } from 'lucide-react';
+import { MarketplaceView } from './components/MarketplaceView';
+import { PatientChatView } from './components/PatientChatView';
+import { Activity, Pill, User as UserIcon, LogOut, ShieldCheck, ShoppingBag, MessageSquare } from 'lucide-react';
 
 // Simple Router State
-type View = 'dashboard' | 'ai' | 'profile';
+type View = 'dashboard' | 'ai' | 'profile' | 'marketplace' | 'messages';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -53,6 +55,16 @@ const App: React.FC = () => {
         ? { ...med, stock: med.stock + 30 } // Mock refill of 30 units
         : med
     ));
+  };
+
+  // Logic for doctor to prescribe (adds to global meds list)
+  const handlePrescribe = (newMed: Medication, patientId: string) => {
+    // In a real app, we would filter by patientId. 
+    // Here we assume the mock patient is the target for simplicity.
+    if (patientId === MOCK_USER_PATIENT.id) {
+       setMeds(prev => [...prev, newMed]);
+       alert(`Prescription sent to ${MOCK_USER_PATIENT.name}`);
+    }
   };
 
   // Render Login Screen
@@ -111,19 +123,37 @@ const App: React.FC = () => {
           </button>
           
           {currentUser.role === Role.PATIENT && (
-            <button 
-              onClick={() => setCurrentView('ai')}
-              className={`flex flex-col items-center gap-1 ${currentView === 'ai' ? 'text-medical-600' : 'text-slate-400 hover:text-slate-600'}`}
-            >
-              <div className="relative">
-                <span className="absolute -top-1 -right-1 flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-medical-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-medical-500"></span>
-                </span>
-                <Activity size={24} />
-              </div>
-              <span className="text-[10px] font-medium">AI Hub</span>
-            </button>
+            <>
+              <button 
+                onClick={() => setCurrentView('ai')}
+                className={`flex flex-col items-center gap-1 ${currentView === 'ai' ? 'text-medical-600' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <div className="relative">
+                  <span className="absolute -top-1 -right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-medical-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-medical-500"></span>
+                  </span>
+                  <Activity size={24} />
+                </div>
+                <span className="text-[10px] font-medium">AI Hub</span>
+              </button>
+
+              <button 
+                onClick={() => setCurrentView('messages')}
+                className={`flex flex-col items-center gap-1 ${currentView === 'messages' ? 'text-medical-600' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <MessageSquare size={24} />
+                <span className="text-[10px] font-medium">Messages</span>
+              </button>
+              
+              <button 
+                onClick={() => setCurrentView('marketplace')}
+                className={`flex flex-col items-center gap-1 ${currentView === 'marketplace' ? 'text-medical-600' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                <ShoppingBag size={24} />
+                <span className="text-[10px] font-medium">Store</span>
+              </button>
+            </>
           )}
 
           <button 
@@ -148,7 +178,10 @@ const App: React.FC = () => {
         <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shrink-0">
           <div>
             <h1 className="text-xl font-bold text-slate-800 capitalize">
-              {currentView === 'ai' ? 'Medical Assistant' : currentUser.role === Role.DOCTOR ? 'Doctor Portal' : 'My Health'}
+              {currentView === 'ai' ? 'Medical Assistant' : 
+               currentView === 'marketplace' ? 'Pharmacy Store' :
+               currentView === 'messages' ? 'Doctor Chat' :
+               currentUser.role === Role.DOCTOR ? 'Doctor Portal' : 'My Health'}
             </h1>
             <p className="text-xs text-slate-500">Welcome back, {currentUser.name}</p>
           </div>
@@ -165,12 +198,15 @@ const App: React.FC = () => {
                 <PatientView 
                   medications={meds} 
                   logs={logs}
+                  user={currentUser}
                   onTakeDose={handleTakeDose}
                   onAddMed={(med) => setMeds([...meds, med])}
                   onRefill={handleRefill}
                 />
               )}
-              {currentView === 'ai' && <AIView />}
+              {currentView === 'ai' && <AIView user={currentUser} medications={meds} />}
+              {currentView === 'messages' && <PatientChatView user={currentUser} />}
+              {currentView === 'marketplace' && <MarketplaceView />}
               {currentView === 'profile' && (
                 <ProfileView user={currentUser} onSave={handleUpdateUser} />
               )}
@@ -183,6 +219,7 @@ const App: React.FC = () => {
                    doctor={currentUser} 
                    patients={[MOCK_USER_PATIENT]}
                    allLogs={logs}
+                   onPrescribe={handlePrescribe}
                  />
                )}
                {currentView === 'profile' && (

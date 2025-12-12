@@ -29,8 +29,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
   useEffect(() => {
     if (user) {
       setFormState({
-        name: user.name,
-        weight: isPatient && patientDetails?.weight ? patientDetails.weight.toString() : '',
+        name: user.name || '',
+        weight: isPatient && patientDetails?.weight !== undefined ? patientDetails.weight.toString() : '',
         conditions: isPatient && patientDetails?.conditions ? patientDetails.conditions.join(', ') : '',
         allergies: isPatient && patientDetails?.allergies ? patientDetails.allergies.join(', ') : ''
       });
@@ -38,7 +38,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
   }, [user, isPatient, patientDetails]);
 
   const handleSave = () => {
-    let updatedUser: User = { ...user, name: formState.name };
+    let updatedUser: User = { ...user, name: formState.name.trim() };
 
     if (isPatient) {
       updatedUser = {
@@ -46,8 +46,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
         details: {
           ...patientDetails,
           weight: formState.weight ? parseFloat(formState.weight) : undefined,
-          conditions: formState.conditions.split(',').map(s => s.trim()).filter(Boolean),
-          allergies: formState.allergies.split(',').map(s => s.trim()).filter(Boolean)
+          conditions: formState.conditions.split(',').map(s => s.trim()).filter(s => s.length > 0),
+          allergies: formState.allergies.split(',').map(s => s.trim()).filter(s => s.length > 0)
         }
       };
     }
@@ -55,6 +55,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
     onSave(updatedUser);
     setIsEditing(false);
   };
+
+  const handleCancel = () => {
+     // Reset form state to current user values
+     setFormState({
+        name: user.name || '',
+        weight: isPatient && patientDetails?.weight !== undefined ? patientDetails.weight.toString() : '',
+        conditions: isPatient && patientDetails?.conditions ? patientDetails.conditions.join(', ') : '',
+        allergies: isPatient && patientDetails?.allergies ? patientDetails.allergies.join(', ') : ''
+     });
+     setIsEditing(false);
+  }
 
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm max-w-md mx-auto border border-slate-100 transition-all">
@@ -71,7 +82,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
         ) : (
           <div className="flex gap-2">
             <button 
-              onClick={() => setIsEditing(false)} 
+              onClick={handleCancel} 
               className="text-slate-400 p-2 hover:bg-slate-50 rounded-lg transition-colors"
               title="Cancel"
             >
@@ -119,13 +130,13 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ user, onSave }) => {
               <div className="flex justify-between items-start border-b border-slate-50 pb-3">
                 <span className="text-slate-500 text-sm font-medium pt-0.5">Conditions</span>
                 <span className="font-semibold text-slate-700 text-sm text-right max-w-[60%] leading-snug">
-                  {patientDetails?.conditions.length > 0 ? patientDetails.conditions.join(', ') : 'None'}
+                  {patientDetails?.conditions && patientDetails.conditions.length > 0 ? patientDetails.conditions.join(', ') : 'None'}
                 </span>
               </div>
               <div className="flex justify-between items-start border-b border-slate-50 pb-3">
                 <span className="text-slate-500 text-sm font-medium pt-0.5">Allergies</span>
                 <span className="font-semibold text-red-600 text-sm text-right max-w-[60%] leading-snug bg-red-50 px-2 py-0.5 rounded">
-                  {patientDetails?.allergies.length > 0 ? patientDetails.allergies.join(', ') : 'None'}
+                  {patientDetails?.allergies && patientDetails.allergies.length > 0 ? patientDetails.allergies.join(', ') : 'None'}
                 </span>
               </div>
             </>
